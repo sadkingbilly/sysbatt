@@ -1,0 +1,43 @@
+statusd_sysbatt.lua is a statusd battery information module for notion.
+
+This module uses sysfs interface (/sys/class/power_supply) to get battery
+information. If it does not exist, you either do not have sysfs mounted
+or are out of luck. It is assumed that battery directories under this path
+are named BAT0, BAT1, etc. If it's different on your system, drop me a line.
+Only the first battery marked as 'present' is considered.
+
+You can use the following variables to construct the notification string:
+  %sysbatt_status: 'charging', 'discharging' or 'full'.
+  %sysbatt_percent_charged: '75.9%' (relative to last full charge).
+  %sysbatt_time_remaining: '01:30:27 until charged' or '02:17:42 remaining'.
+    May also be set to 'no time estimate' in situations when a meaningful
+    estimate cannot be obtained.
+  %sysbatt_hint: 'normal', 'important' or 'critical', depending on
+    current charge percentage and its relation to corresponding thresholds
+    (which are configurable).
+
+Remaining time estimates are pretty inaccurate and may change non-monotonically
+(but they are equivalent to the ones acpi binary provides).
+
+To install, build the module and copy it to notion directory. On a Debian
+system (assuming notion was installed using apt-get or equivalent):
+
+  luac -o statusd_sysbatt.lc statusd_sysbatt.lua
+  sudo cp statusd_sysbatt.lc /usr/lib/notion/lc/
+
+To enable, modify the statusbar template and configure statusd to launch the
+module in cfg_statusbar.lua. On a Debian system it's located at
+
+  /etc/X11/notion/cfg_statusbar.lua
+
+Example template entry:
+
+  battery: %sysbatt_status (%sysbatt_percent_charged) | %sysbatt_time_remaining
+
+Restart notion after modifications for changes to take effect.
+
+For debugging purposes the module may be run directly:
+
+  lua statusd_sysbatt.lua
+
+-- Jurij Smakov <jurij@wooyd.org>  Mon, 15 Apr 2013 23:16:16 +0100
