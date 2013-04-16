@@ -35,6 +35,7 @@ local function read_file(name)
         return nil
     end
     local data = fh:read("*a");
+    fh:close()
     data = string.gsub(data, '^%s+', '')
     data = string.gsub(data, '%s+$', '')
     return data
@@ -55,14 +56,20 @@ local function find_battery_path()
     return nil
 end           
 
-local function get_percent_charged(charge_now, charge_full)
-    if charge_now == nil or charge_full == nil then
+local function get_percent_charged(params)
+    if params.capacity ~= nil then
+        return tonumber(params.capacity)
+    elseif params.charge_now ~= nil and params.charge_full ~= nil then
+        local capacity_now = tonumber(params.charge_now)
+        local capacity_full = tonumber(params.charge_full)
+        return 100.0 * capacity_now / capacity_full
+    elseif params.energy_now ~= nil and params.energy_full ~= nil then
+        local capacity_now = tonumber(params.energy_now)
+        local capacity_full = tonumber(params.energy_full)
+        return 100.0 * capacity_now / capacity_full
+    else
         return nil
     end
-
-    local charge_now_num = tonumber(charge_now)
-    local charge_full_num = tonumber(charge_full)
-    return 100.0 * charge_now_num / charge_full_num
 end
 
 local function get_hint(percent_charged, status)
@@ -80,22 +87,25 @@ local function get_hint(percent_charged, status)
     return hint
 end
 
-local function get_time_remaining(charge_now, charge_full, current_now, status)
-    if charge_now == nil or charge_full == nil or current_now == nil or status == nil then
+local function get_time_remaining(params)
+    local capacity_now, capacity_full, rate, time_hours, suffix
+    if params.charge_now ~= nil and params.charge_full ~= nil and params.current_now ~= nil then
+        capacity_now = tonumber(params.charge_now)
+        capacity_full = tonumber(params.charge_full)
+        rate = tonumber(params.current_now)
+    elseif params.energy_now ~= nil and params.energy_full ~= nil and params.power_now ~= nil then
+        capacity_now = tonumber(params.energy_now)
+        capacity_full = tonumber(params.energy_full)
+        rate = tonumber(params.power_now)
+    else
         return nil
     end
 
-    local charge_now_num = tonumber(charge_now)
-    local charge_full_num = tonumber(charge_full)
-    local current_now_num = tonumber(current_now)
-    local time_hours = nil
-    local suffix = nil
-
-    if status == 'discharging' then
-        time_hours = charge_now_num / current_now_num
+    if params.status == 'discharging' then
+        time_hours = capacity_now / rate
         suffix = 'remaining'
-    elseif status == 'charging' then
-        time_hours = (charge_full_num - charge_now_num) / current_now_num
+    elseif params.status == 'charging' then
+        time_hours = (capacity_full - capacity_num) / rate
         suffix = 'until charged'
     else
         return nil
@@ -111,6 +121,23 @@ local function get_time_remaining(charge_now, charge_full, current_now, status)
     return time_str .. ' ' .. suffix
 end
 
+local function read_params(path)
+    local params = {
+        charge_now = read_file(path .. '/charge_now'),
+        charge_full = read_file(path .. '/charge_full'),
+        current_now = read_file(path .. '/current_now'),
+        energy_now = read_file(path .. '/energy_now'),
+        energy_full = read_file(path .. '/energy_full'),
+        power_now = read_file(path .. '/power_now'),
+        capacity = read_file(path .. '/capacity'),
+        status = read_file(path .. '/status'),
+    }
+    if params.status ~= nil then
+        params.status = string.lower(params.status)
+    end
+    return params
+end
+
 local function get_battery_info(path)
     local info = {
         status = 'not available',
@@ -122,31 +149,27 @@ local function get_battery_info(path)
         return info
     end
 
-    local charge_now = read_file(path .. '/charge_now')
-    local charge_full = read_file(path .. '/charge_full')
-    local current_now = read_file(path .. '/current_now')
-    local status = read_file(path .. '/status')
-    if status ~= nil then
-        info.status = string.lower(status)
-    end
+    local params = read_params(path)
 
-    local percent_charged = get_percent_charged(charge_now, charge_full)
+    local percent_charged = get_percent_charged(params)
     if percent_charged ~= nil then
         info.percent_charged = string.format('%.1f%%', percent_charged)
     end
 
-    local hint = get_hint(percent_charged, info.status)
+    local hint = get_hint(percent_charged, params.status)
     if hint ~= nil then
         info.hint = hint
     end
 
-    local time_remaining = get_time_remaining(charge_now, charge_full, current_now, info.status)
+    local time_remaining = get_time_remaining(params)
     if time_remaining ~= nil then
         info.time_remaining = time_remaining
     end
 
-    if info.status == 'unknown' and percent_charged ~= nil and percent_charged > 99.0 then
+    if params.status == 'unknown' and percent_charged ~= nil and percent_charged > 99.0 then
         info.status = 'full'
+    else
+        info.status = params.status
     end
 
     return info
