@@ -105,7 +105,7 @@ local function get_time_remaining(params)
         time_hours = capacity_now / rate
         suffix = 'remaining'
     elseif params.status == 'charging' then
-        time_hours = (capacity_full - capacity_num) / rate
+        time_hours = (capacity_full - capacity_now) / rate
         suffix = 'until charged'
     else
         return nil
