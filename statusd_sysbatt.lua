@@ -73,10 +73,10 @@ local function get_percent_charged(params)
 end
 
 local function get_hint(percent_charged, status)
+    local hint = 'normal'
     if percent_charged == nil or status == nil then
-        return nil
+        return hint
     end
-    local hint = nil
     if status == 'discharging' then
         if percent_charged < settings.critical_threshold then
             hint = 'critical'
@@ -187,8 +187,9 @@ local function update_battery_info()
     if statusd ~= nil then
         statusd.inform('sysbatt_status', battery_info.status)
         statusd.inform('sysbatt_percent_charged', battery_info.percent_charged)
-        statusd.inform('sysbatt_hint', battery_info.hint)
+        statusd.inform('sysbatt_percent_charged_hint', battery_info.hint)
         statusd.inform('sysbatt_time_remaining', battery_info.time_remaining)
+        statusd.inform('sysbatt_time_remaining_hint', battery_info.hint)
         sysbatt_timer:set(settings.update_interval, update_battery_info)
     else
         io.stdout:write('status          = ' .. battery_info.status .. '\n')
