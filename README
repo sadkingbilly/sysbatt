@@ -9,12 +9,12 @@ Only the first battery marked as 'present' is considered.
 You can use the following variables to construct the notification string:
   %sysbatt_status: 'charging', 'discharging' or 'full'.
   %sysbatt_percent_charged: '75.9%' (relative to last full charge).
+  %sysbatt_percent_charged_hint: 'critical', 'normal' or 'important',
+    depending on current charge percentage and its relation to corresponding
+    thresholds (which are configurable).
   %sysbatt_time_remaining: '01:30:27 until charged' or '02:17:42 remaining'.
     May also be set to 'no time estimate' in situations when a meaningful
     estimate cannot be obtained.
-  %sysbatt_hint: 'normal', 'important' or 'critical', depending on
-    current charge percentage and its relation to corresponding thresholds
-    (which are configurable).
 
 Remaining time estimates are pretty inaccurate and may change non-monotonically
 (but they are equivalent to the ones acpi binary provides).
@@ -40,4 +40,4 @@ For debugging purposes the module may be run directly:
 
   lua statusd_sysbatt.lua
 
--- Jurij Smakov <jurij@wooyd.org>  Mon, 15 Apr 2013 23:16:16 +0100
+-- Jurij Smakov <jurij@wooyd.org>  Mon, 09 Dec 2013 22:25:47 +0000

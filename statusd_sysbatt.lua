@@ -20,7 +20,7 @@
 
 local defaults={
     update_interval = 30 * 1000,
-    important_threshold = 30,
+    important_threshold = 50,
     critical_threshold = 10,
 }
 
@@ -77,13 +77,15 @@ local function get_hint(percent_charged, status)
     if percent_charged == nil or status == nil then
         return hint
     end
-    if status == 'discharging' then
-        if percent_charged < settings.critical_threshold then
-            hint = 'critical'
-        elseif percent_charged < settings.important_threshold then
-            hint = 'important'
-        end
+
+    if percent_charged < settings.critical_threshold then
+        hint = 'critical'
+    elseif percent_charged < settings.important_threshold then
+        hint = 'normal'
+    else
+        hint = 'important'
     end
+
     return hint
 end
 
@@ -189,7 +191,7 @@ local function update_battery_info()
         statusd.inform('sysbatt_percent_charged', battery_info.percent_charged)
         statusd.inform('sysbatt_percent_charged_hint', battery_info.hint)
         statusd.inform('sysbatt_time_remaining', battery_info.time_remaining)
-        statusd.inform('sysbatt_time_remaining_hint', battery_info.hint)
+        statusd.inform('sysbatt_time_remaining_hint', 'normal')
         sysbatt_timer:set(settings.update_interval, update_battery_info)
     else
         io.stdout:write('status          = ' .. battery_info.status .. '\n')
