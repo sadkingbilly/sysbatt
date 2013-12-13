@@ -57,19 +57,25 @@ local function find_battery_path()
 end           
 
 local function get_percent_charged(params)
+    local percent_charged = nil
+
     if params.capacity ~= nil then
-        return tonumber(params.capacity)
+        percent_charged = tonumber(params.capacity)
     elseif params.charge_now ~= nil and params.charge_full ~= nil then
         local capacity_now = tonumber(params.charge_now)
         local capacity_full = tonumber(params.charge_full)
-        return 100.0 * capacity_now / capacity_full
+        percent_charged = 100.0 * capacity_now / capacity_full
     elseif params.energy_now ~= nil and params.energy_full ~= nil then
         local capacity_now = tonumber(params.energy_now)
         local capacity_full = tonumber(params.energy_full)
-        return 100.0 * capacity_now / capacity_full
-    else
-        return nil
+        percent_charged = 100.0 * capacity_now / capacity_full
     end
+
+    if percent_charged ~= nil and percent_charged > 100.0 then
+        percent_charged = 100.0
+    end
+
+    return percent_charged
 end
 
 local function get_hint(percent_charged, status)
@@ -110,6 +116,10 @@ local function get_time_remaining(params)
         time_hours = (capacity_full - capacity_now) / rate
         suffix = 'until charged'
     else
+        return nil
+    end
+
+    if time_hours < 0 then
         return nil
     end
 
